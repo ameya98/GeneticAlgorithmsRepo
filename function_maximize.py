@@ -36,6 +36,7 @@ def weighted_choice(choices, weights):
         if total < threshold:
             return choices[index]
 
+
 # Point2D class and method definitions
 class Point2D:
     # create random 2D point within boundaries [0, x_max] and [0, y_max]
@@ -64,6 +65,7 @@ class Point2D:
 
         self.fitness = self.evaluate_fitness()
 
+
 # Population class and method definition
 class population2D:
     def __init__(self):
@@ -78,6 +80,8 @@ class population2D:
         self.evaluated_diversity_ranks = False
         self.mean_fitness = 0
         self.mean_diversity = 0
+        self.x_mean = 0
+        self.y_mean = 0
 
     # evaluate fitness rank of each point in population
     def evaluate_fitness_ranks(self):
@@ -98,18 +102,18 @@ class population2D:
     def evaluate_diversity_ranks(self):
         if not self.evaluated_diversity_ranks:
             # find mean x and y coordinates
-            x_mean = 0
-            y_mean = 0
+            self.x_mean = 0
+            self.y_mean = 0
 
             for point in self.points:
-                x_mean += point.x
-                y_mean += point.y
+                self.x_mean += point.x
+                self.y_mean += point.y
 
-            x_mean /= population_size
-            y_mean /= population_size
+            self.x_mean /= population_size
+            self.y_mean /= population_size
 
             for point in self.points:
-                point.diversity = (abs(point.x - x_mean) + abs(point.y - y_mean))
+                point.diversity = (abs(point.x - self.x_mean) + abs(point.y - self.y_mean))
                 self.mean_diversity += point.diversity
 
             self.mean_diversity /= population_size
@@ -216,7 +220,7 @@ population_x_vals = [point.x for point in population.points]
 population_y_vals = [point.y for point in population.points]
 
 plt.scatter(population_x_vals, population_y_vals)
-plt.title("Initial population")
+plt.title("Initial Population")
 plt.xlim((0, x_max))
 plt.ylim((0, y_max))
 plt.show()
@@ -247,13 +251,19 @@ for iteration in range(1, num_iterations + 1):
     print("Mean L1 diversity =", population.mean_diversity)
     print()
 
+# mean fitness as estimate of maximum
+print("Function Maximum Estimate =", population.mean_fitness)
+
+# point with mean diversity as estimate of maximum position
+print("Function Maximum Position Estimate =", "(" + str(population.points[population_size // 2].x) + ", " + str(population.points[population_size // 2].y) + ")")
+
 # plotting again
 # plot final population points
 population_x_vals = [point.x for point in population.points]
 population_y_vals = [point.y for point in population.points]
 
 plt.scatter(population_x_vals, population_y_vals, color='r')
-plt.title("Final population")
+plt.title("Final Population")
 plt.xlim((0, x_max))
 plt.ylim((0, y_max))
 plt.show()
@@ -265,7 +275,7 @@ plt.title("Mean Population Stats")
 plt.plot(range(num_iterations + 1), plot_fitness, 'b--',)
 plt.ylabel('Fitness')
 
-plt.subplot(2, 1, 2 )
+plt.subplot(2, 1, 2)
 plt.plot(range(num_iterations + 1), plot_diversity, 'r--')
 plt.ylabel('L1 diversity')
 
