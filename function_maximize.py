@@ -12,6 +12,7 @@ from matplotlib.ticker import LinearLocator, FormatStrFormatter
 from numpy import meshgrid
 
 # global parameters
+surfaceplot_z_axis_limits = (-150, 150)
 population_size = 60
 elite_population_size = 10
 x_max = 100
@@ -23,7 +24,9 @@ num_iterations = 15
 # objective function to maximise
 def objective_function(x, y):
     return (10 * sin((5 * pi * x)/(2 * x_max)) ** 2) * (10 * sin((5 * pi * y)/(2 * y_max)) ** 2) * exp(-(x + y)/100)
-    # return (x + y)
+    # return 1/(x + y + 1)
+    # return x + y if x > 50 else y - x
+
 
 # a weighted choice function
 def weighted_choice(choices, weights):
@@ -44,8 +47,8 @@ class Point2D:
         self.x = uniform(0, x_max)
         self.y = uniform(0, y_max)
         self.index = -1
-        self.fitness = 0
-        self.diversity = 0
+        self.fitness = 0.0
+        self.diversity = 0.0
         self.fitness_rank = -1
         self.diversity_rank = -1
 
@@ -58,20 +61,26 @@ class Point2D:
         index = randint(0, 1)
         if index == 0:
             self.x += uniform(-mutation_range, mutation_range)
+
+            # point shouldn't mutate out of range!
             self.x = min(self.x, x_max)
+            self.x = max(self.x, 0)
         else:
             self.y += uniform(-mutation_range, mutation_range)
+
+            # point shouldn't mutate out of range!
             self.y = min(self.y, y_max)
+            self.y = max(self.y, 0)
 
         self.fitness = self.evaluate_fitness()
 
 
 # Population class and method definition
 class population2D:
-    def __init__(self):
+    def __init__(self, size):
         self.points = []
 
-        for pointnumber in range(population_size):
+        for pointnumber in range(size):
             point = Point2D()
             self.points.append(point)
             self.points[pointnumber].index = pointnumber
@@ -197,7 +206,7 @@ z_sample = [[objective_function(x_sample[i][j], y_sample[i][j]) for i in range(x
 
 surface = axes.plot_surface(x_sample, y_sample, z_sample, cmap=cm.coolwarm, linewidth=0, antialiased=False)
 
-axes.set_zlim(0, 200)
+axes.set_zlim(surfaceplot_z_axis_limits)
 axes.zaxis.set_major_locator(LinearLocator(10))
 axes.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
 
@@ -209,7 +218,7 @@ plt.show()
 
 # actual algorithm code starts here #
 # initial population
-population = population2D()
+population = population2D(population_size)
 population.evaluate_fitness_ranks()
 population.evaluate_diversity_ranks()
 
@@ -251,11 +260,14 @@ for iteration in range(1, num_iterations + 1):
     print("Mean L1 diversity =", population.mean_diversity)
     print()
 
-# mean fitness as estimate of maximum
-print("Function Maximum Estimate =", population.mean_fitness)
+# point with best fitness is the estimate of point of maxima
+best_point = Point2D()
+for point in population.points:
+    if point.fitness > best_point.fitness:
+        best_point = point
 
-# point with mean diversity as estimate of maximum position
-print("Function Maximum Position Estimate =", "(" + str(population.points[population_size // 2].x) + ", " + str(population.points[population_size // 2].y) + ")")
+print("Function Maximum Estimate =", best_point.fitness)
+print("Function Maximum Position Estimate =", "(" + str(best_point.x) + ", " + str(best_point.y) + ")")
 
 # plotting again
 # plot final population points
