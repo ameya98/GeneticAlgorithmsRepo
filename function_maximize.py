@@ -1,4 +1,6 @@
 # Genetic Algorithms - Objective Function Maximization #
+# Author: Ameya Daigavane #
+# Date: 15th April, 2018 #
 
 # libraries for the genetic algorithm
 from random import randint, uniform
@@ -12,6 +14,7 @@ from matplotlib.ticker import LinearLocator, FormatStrFormatter
 from numpy import meshgrid
 
 # global parameters
+# note: keep population_size and elite_population_size of same parity
 surfaceplot_z_axis_limits = (-150, 150)
 population_size = 60
 elite_population_size = 10
@@ -79,8 +82,9 @@ class Point2D:
 class population2D:
     def __init__(self, size):
         self.points = []
+        self.size = size
 
-        for pointnumber in range(size):
+        for pointnumber in range(self.size):
             point = Point2D()
             self.points.append(point)
             self.points[pointnumber].index = pointnumber
@@ -99,10 +103,10 @@ class population2D:
                 point.fitness = point.evaluate_fitness()
                 self.mean_fitness += point.fitness
 
-            self.mean_fitness /= population_size
+            self.mean_fitness /= self.size
             self.points.sort(key=lambda point: point.fitness, reverse=True)
 
-            for rank_number in range(population_size):
+            for rank_number in range(self.size):
                 self.points[rank_number].fitness_rank = rank_number
 
             self.evaluated_fitness_ranks = True
@@ -118,24 +122,24 @@ class population2D:
                 self.x_mean += point.x
                 self.y_mean += point.y
 
-            self.x_mean /= population_size
-            self.y_mean /= population_size
+            self.x_mean /= self.size
+            self.y_mean /= self.size
 
             for point in self.points:
                 point.diversity = (abs(point.x - self.x_mean) + abs(point.y - self.y_mean))
                 self.mean_diversity += point.diversity
 
-            self.mean_diversity /= population_size
+            self.mean_diversity /= self.size
             self.points.sort(key=lambda point: point.diversity, reverse=True)
 
-            for rank_number in range(population_size):
+            for rank_number in range(self.size):
                 self.points[rank_number].diversity_rank = rank_number
 
             self.evaluated_diversity_ranks = True
 
     # generate the new population by breeding points
     def breed(self):
-        # sort according to diversity and fitness rank
+        # sort according to fitness rank
         self.points.sort(key=lambda point: point.fitness_rank)
 
         # push all the really good points first
