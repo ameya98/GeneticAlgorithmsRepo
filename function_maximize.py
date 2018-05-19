@@ -196,26 +196,26 @@ class population2D:
     def converge(self, iterations=15):
         for iteration in range(1, iterations + 1):
             # breed and mutate
-            population.__breed()
-            population.__mutate()
+            self.__breed()
+            self.__mutate()
 
             # find the new ranks
-            population.__evaluate_fitness_ranks()
-            population.__evaluate_diversity_ranks()
+            self.__evaluate_fitness_ranks()
+            self.__evaluate_diversity_ranks()
 
             # print the stats
             if self.verbose == 1:
                 print("Iteration", iteration, "complete.")
             elif self.verbose == 2:
                 print("Iteration", iteration, "complete, with statistics:")
-                print("Mean fitness =", population.mean_fitness)
-                print("Mean L1 diversity =", population.mean_diversity)
+                print("Mean fitness =", self.mean_fitness)
+                print("Mean L1 diversity =", self.mean_diversity)
                 print()
 
         # point with best fitness is the estimate of point of maxima
         best_point_fitness = float("-inf")
         best_point = None
-        for point in population.points:
+        for point in self.points:
             if point.fitness > best_point_fitness:
                 best_point_fitness = point.fitness
                 best_point = point
