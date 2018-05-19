@@ -33,6 +33,7 @@ The population2D constructor takes the following arguments:
 #### population_size
 (default = 60) Number of points in the population.
 #### objective_function
+The function to maximize!
 #### elite_fraction
 (default = 0.1)
 Fraction of the population's points to be kept as elite during breeding.
