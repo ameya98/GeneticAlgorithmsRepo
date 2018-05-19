@@ -7,18 +7,21 @@ import networkx as nx
 import numpy as np
 from random import randint, uniform, choice, shuffle
 import matplotlib.pyplot as plt
+from networkx.algorithms import approximation
 
 # global configuration settings
 # note: keep population_size and elite_population_size of same parity
-num_vertices = 20
-population_size = 60
-elite_population_size = 6
+num_vertices = 100
+population_size = 30
+elite_population_size = 8
 mutation_probability = 0.04
 num_iterations = 15
 
 # create graph G - a networkx undirected graph
-G = nx.gnp_random_graph(num_vertices, 0.2)
-print(G.edges)
+# G = nx.gnp_random_graph(num_vertices, 0.2)
+# G = nx.karate_club_graph()
+G = nx.gnm_random_graph(20, 3)
+print(len(G.nodes), len(G.edges))
 
 # a weighted choice function
 def weighted_choice(choices, weights):
@@ -30,6 +33,7 @@ def weighted_choice(choices, weights):
         total -= normalized_weight
         if total < threshold:
             return choices[index]
+
 
 # Vertex Cover class definitions
 class VertexCover:
@@ -60,18 +64,18 @@ class VertexCover:
             self.vertexarray = np.array([False for _ in range(num_vertices)])
             self.chromosomenumber = 0
 
-            while len(self.graph.edges) > 0:
+            while len(original_graph.edges) > 0:
                 # shuffle the list of vertices
-                node_list = list(self.graph.nodes)
+                node_list = list(original_graph.nodes)
                 shuffle(node_list)
 
                 # remove all degree-1 vertices one-by-one
                 degree_one_vertex_found = False
                 for vertex in node_list:
-                    if self.graph.degree[vertex] == 1:
+                    if original_graph.degree[vertex] == 1:
                         degree_one_vertex_found = True
 
-                        neighbors = list(self.graph.neighbors(vertex))
+                        neighbors = list(original_graph.neighbors(vertex))
                         adjvertex = neighbors[0]
 
                         # select the adjacent vertex
@@ -80,39 +84,36 @@ class VertexCover:
                         # remove vertex along with neighbours from graph
                         removed_subgraph = neighbors
                         removed_subgraph.append(vertex)
-                        self.graph.remove_nodes_from(removed_subgraph)
+                        original_graph.remove_nodes_from(removed_subgraph)
 
                         break
 
                 # no more degree-1 vertices left
                 if not degree_one_vertex_found:
                     # randomly choose one of the remaining vertices
-                    vertex = choice(list(self.graph.nodes))
-                    if self.graph.degree[vertex] >= 2:
+                    vertex = choice(list(original_graph.nodes))
+                    if original_graph.degree[vertex] >= 2:
                         # make a choice depending on the chromosome bit
                         if self.chromosomes[self.chromosomenumber] == 0:
                             # add all neighbours to vertex cover
-                            for othervertex in self.graph.neighbors(vertex):
+                            for othervertex in original_graph.neighbors(vertex):
                                 self.vertexarray[othervertex] = True
 
                             # remove vertex along with neighbours from graph
-                            removed_subgraph = list(self.graph.neighbors(vertex))
+                            removed_subgraph = list(original_graph.neighbors(vertex))
                             removed_subgraph.append(vertex)
-                            self.graph.remove_nodes_from(removed_subgraph)
+                            original_graph.remove_nodes_from(removed_subgraph)
 
                         elif self.chromosomes[self.chromosomenumber] == 1:
                             # add only this vertex to the vertex cover
                             self.vertexarray[vertex] = True
 
                             # remove only this vertex from the graph
-                            self.graph.remove_node(vertex)
+                            original_graph.remove_node(vertex)
 
                         # go to the next chromosome to be checked
                         self.chromosomenumber = self.chromosomenumber + 1
                         continue
-
-            # restore graph
-            self.graph = original_graph
 
             # put all true elements in a numpy array - representing the actual vertex cover
             self.vertexlist = np.where(self.vertexarray == True)[0]
@@ -123,7 +124,10 @@ class VertexCover:
 
     # mutate the chromosome at a random index
     def mutate(self):
-        index = randint(0, num_vertices - 1)
+        if self.chromosomenumber > 0:
+            index = randint(0, self.chromosomenumber)
+        else:
+            index = 0
 
         if self.chromosomes[index] == 0:
             self.chromosomes[index] = 1
@@ -200,7 +204,7 @@ class populationVC:
 
     # generate the new population by breeding vertex covers
     def breed(self):
-        # sort according to fitness
+        # sort according to fitness_rank
         self.vertexcovers.sort(key=lambda vertex_cover: vertex_cover.fitness_rank)
 
         # push all the really good ('elite') vertex covers first
@@ -252,7 +256,9 @@ def crossover(parent1, parent2):
     child2 = VertexCover(parent2.graph)
 
     # find the point to split and rejoin the chromosomes
-    split_point = randint(1, num_vertices - 1)
+    # note that chromosome number + 1 is the actual length of the chromosome in each vertex cover encoding
+    split_point = randint(0, min(parent1.chromosomenumber, parent2.chromosomenumber))
+
 
     # actual splitting and recombining
     child1.chromosomes = parent1.chromosomes[:split_point] + parent2.chromosomes[split_point:]
@@ -277,6 +283,7 @@ def is_valid_vertex_cover(vertex_cover):
     if valid_vertex_cover:
         print("Valid!")
 
+
 # main logic begins here #
 # initialise vertex cover population
 population = populationVC(G, population_size)
@@ -286,6 +293,10 @@ population.evaluate_diversity_ranks()
 # for plotting
 plot_fitness = [population.mean_fitness]
 plot_diversity = [population.mean_diversity]
+
+# print the chromosome numbers
+# for vertex_cover in population.vertexcovers:
+#     print(vertex_cover.chromosomenumber)
 
 # print the initial stats
 print("Initial Population")
@@ -327,6 +338,8 @@ for vertex_cover in population.vertexcovers:
 
 print("Best Vertex Cover Size =", len(best_vertex_cover))
 print("Best Vertex Cover = ", best_vertex_cover.vertexlist)
+
+print("networkx approximation =", len(approximation.min_weighted_vertex_cover(G)))
 
 # just to check
 # is_valid_vertex_cover(best_vertex_cover)
