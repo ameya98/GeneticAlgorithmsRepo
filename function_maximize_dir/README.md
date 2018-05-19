@@ -1,7 +1,7 @@
 ## function_maximize_genetic
-**function_maximize_genetic** is a package that solves the problem of maximizing non-convex objective functions in 2-dimensions,
-with a genetic algorithm approach.  
-The idea is to sample an evolving population of points converging to the function maximum.
+**function_maximize_genetic** is a package that takes a genetic algorithm approach to maximization problem of non-convex objective functions in two dimensions.
+  
+The idea is to sample an evolving population of points converging to the function maximum over many iterations.
 
 Given a function on two variables x and y, say:
 ```python
@@ -16,7 +16,7 @@ and to find the maximum, just do:
 ```python
 best_point = population.converge(iterations=20)
 ```
-**population.converge()** returns a **Point2D** object, which has attributes 'x' and 'y', signifying the coordinates.
+The **.converge()** method returns a **Point2D** object, which has attributes 'x' and 'y', signifying the coordinates of the maxima point.
 ```python
 print(best_point.x, " ", best_point.y)
 ```
