@@ -3,13 +3,18 @@ An assortment of genetic algorithms - all written from scratch, for Python 3.5.
 ### Objective Function Maximization
 **function_maximize.py** takes an objective function of two variables and samples an evolving population of points converging to the function maxima.
 
-The population undergoes random mutations - and is selected through elitism along with breeding with selection weights 
-inversely proportional to fitness and diversity ranks.  
+For setup instructions and more details, please see the README markdown file in the **function_maximize_dir** subdirectory.
 
 The objective function doesn't have to be differentiable, or even continuous in the specified domain!  
-Included are surface plots of the function, initial population and final population graphs, as well as line plots of mean population fitness 
+The population of 2-dimensional points undergoes random mutations - and is selected through elitism along with breeding with selection weights 
+inversely proportional to fitness and diversity ranks.  
+
+**function_maximize_plots.py** contains relevant code on obtaining surface plots of the function, initial population and final population graphs, as well as line plots of mean population fitness 
 and L1 diversity through the iterations.  
-Completely customizable and free to use.  
+Completely customizable - licensed under the MIT License.
+
+![](functionplot.png)
+![](meanstats.png)
 
 ### Minimum Vertex Cover for Graphs
 **vertex_cover.py** gives a genetic algorithm heuristic to the well-known NP-Complete Minimum Vertex Cover problem - given a graph, find a subset of its vertices such that every edge has an endpoint in this subset.  
