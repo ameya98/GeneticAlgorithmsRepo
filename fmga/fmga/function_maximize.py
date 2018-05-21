@@ -29,6 +29,13 @@ def weighted_choice(choices, weights):
 class Point2D:
     # create random 2D point within boundaries [x_min, x_max] and [y_min, y_max]
     def __init__(self, x_min=0, x_max=100, y_min=0, y_max=100, mutation_range=5):
+
+        if x_min > x_max:
+            raise ValueError("x_min greater than x_max.")
+
+        if y_min > y_max:
+            raise ValueError("y_min greater than y_max.")
+
         self.x_min = x_min
         self.x_max = x_max
         self.y_min = y_min
@@ -61,7 +68,7 @@ class Point2D:
 
             # point shouldn't mutate out of range!
             self.x = min(self.x, self.x_max)
-            self.x = max(self.x, self.y_min)
+            self.x = max(self.x, self.x_min)
         else:
             self.y += uniform(-self.mutation_range, self.mutation_range)
 
@@ -74,6 +81,21 @@ class Point2D:
 class population2D:
     def __init__(self, population_size=60, objective_function=None, elite_fraction=0.1, mutation_probability=0.05,
                  x_min=0, x_max=100, y_min=0, y_max=100, mutation_range=5, verbose=2):
+
+        if x_min > x_max:
+            raise ValueError("Parameter x_min greater than x_max.")
+
+        if y_min > y_max:
+            raise ValueError("Parameter y_min greater than y_max.")
+
+        if elite_fraction > 1.0 or elite_fraction < 0.0:
+            raise ValueError("Parameter 'elite_fraction' must be in range [0,1].")
+
+        if mutation_probability > 1.0 or mutation_probability < 0.0:
+            raise ValueError("Parameter 'mutation_probability' must be in range [0,1].")
+
+        if verbose not in [0, 1, 2]:
+            raise ValueError("Parameter verbose must be one of 0, 1 or 2.")
 
         self.points = []
         self.size = population_size
@@ -94,6 +116,7 @@ class population2D:
         self.mean_diversity = 0
         self.x_mean = 0
         self.y_mean = 0
+        self.num_iterations = 1
 
         # evaluate the ranks
         self.__evaluate_fitness_ranks()
@@ -102,6 +125,8 @@ class population2D:
     # evaluate fitness rank of each point in population
     def __evaluate_fitness_ranks(self):
         if not self.evaluated_fitness_ranks:
+
+            self.mean_fitness = 0
             for point in self.points:
                 point.evaluate_fitness(self.objective_function)
                 self.mean_fitness += point.fitness
@@ -128,6 +153,7 @@ class population2D:
             self.x_mean /= self.size
             self.y_mean /= self.size
 
+            self.mean_diversity = 0
             for point in self.points:
                 point.diversity = (abs(point.x - self.x_mean) + abs(point.y - self.y_mean))
                 self.mean_diversity += point.diversity
@@ -192,27 +218,34 @@ class population2D:
                 self.evaluated_fitness_ranks = False
                 self.evaluated_diversity_ranks = False
 
-    # perform the iterations and return the best point
+    # perform one iteration
+    def iterate(self):
+        # breed and mutate
+        self.__breed()
+        self.__mutate()
+
+        # find the new ranks
+        self.__evaluate_fitness_ranks()
+        self.__evaluate_diversity_ranks()
+
+        # print the stats
+        if self.verbose == 1:
+            print("Iteration", self.num_iterations, "complete.")
+        elif self.verbose == 2:
+            print("Iteration", self.num_iterations, "complete, with statistics:")
+            print("Mean fitness =", self.mean_fitness)
+            print("Mean L1 diversity =", self.mean_diversity)
+            print()
+
+        self.num_iterations += 1
+
+    # perform the iterations
     def converge(self, iterations=15):
         for iteration in range(1, iterations + 1):
-            # breed and mutate
-            self.__breed()
-            self.__mutate()
+            self.iterate()
 
-            # find the new ranks
-            self.__evaluate_fitness_ranks()
-            self.__evaluate_diversity_ranks()
-
-            # print the stats
-            if self.verbose == 1:
-                print("Iteration", iteration, "complete.")
-            elif self.verbose == 2:
-                print("Iteration", iteration, "complete, with statistics:")
-                print("Mean fitness =", self.mean_fitness)
-                print("Mean L1 diversity =", self.mean_diversity)
-                print()
-
-        # point with best fitness is the estimate of point of maxima
+    # point with best fitness is the estimate of point of maxima
+    def best_estimate(self):
         best_point_fitness = float("-inf")
         best_point = None
         for point in self.points:
@@ -240,7 +273,7 @@ def crossover(point1, point2):
 
 
 if __name__ == "__main__":
-
+    # initialize the population
     population = population2D(population_size=60, objective_function=objective_function)
 
     # print the initial stats
@@ -249,8 +282,12 @@ if __name__ == "__main__":
     print("Mean L1 diversity =", population.mean_diversity)
     print()
 
-    # point with best fitness is the estimate of point of maxima
-    best_point = population.converge()
+    # breed and mutate for 15 iterations
+    population.converge(iterations=15)
 
+    # get the best_estimate
+    best_point = population.best_estimate()
+
+    # print the stats
     print("Function Maximum Estimate =", best_point.fitness)
     print("Function Maximum Position Estimate =", "(" + str(best_point.x) + ", " + str(best_point.y) + ")")

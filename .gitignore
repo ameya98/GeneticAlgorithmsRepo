@@ -1,0 +1,11 @@
+# core files
+fmga/*
+!fmga/fmga/function_maximize.py
+
+vcga/*
+!vcga/vcga/vertex_cover.py
+
+.idea
+__pycache__
+
+function_maximize_test.py
