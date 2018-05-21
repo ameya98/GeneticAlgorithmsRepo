@@ -2,7 +2,6 @@
 **fmga** (**f**unction **m**aximization through **g**enetic **a**lgorithms) is a package that takes a genetic algorithm approach to maximization problem of non-convex objective functions in two dimensions.
  
 The objective function doesn't have to be differentiable, or even continuous in the specified domain!  
-
 The idea is to sample an evolving population of points converging to the function maximum over many iterations.
 
 The population of 2-dimensional points undergoes random mutations - and is selected through elitism along with breeding with selection weights inversely proportional to fitness and diversity ranks.

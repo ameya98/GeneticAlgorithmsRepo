@@ -3,7 +3,8 @@ An assortment of genetic algorithms - all written from scratch, for Python 3.5.
 ### Objective Function Maximization
 **fmga** takes an objective function of two variables and samples an evolving population of points converging to the function maxima.
 
-fmga is now available on PyPI. Latest version: 0.2.1. Install with
+fmga is now available on PyPI! (Latest version: 0.2.1) 
+Install with
 ```bash
 pip install fmga
 ```
