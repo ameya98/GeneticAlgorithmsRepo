@@ -1,9 +1,14 @@
 # GeneticAlgorithmsRepo
 An assortment of genetic algorithms - all written from scratch, for Python 3.5.
 ### Objective Function Maximization
-**function_maximize.py** takes an objective function of two variables and samples an evolving population of points converging to the function maxima.
+**fmga** takes an objective function of two variables and samples an evolving population of points converging to the function maxima.
 
-For setup instructions and more details, please see the README markdown file in the **function_maximize_dir** subdirectory.
+fmga is now available on PyPI. Latest version: 0.2.1. Install with
+```bash
+pip install fmga
+```
+
+For more details, please see the README markdown file in the **fmga** subdirectory.
 
 The objective function doesn't have to be differentiable, or even continuous in the specified domain!  
 The population of 2-dimensional points undergoes random mutations - and is selected through elitism along with breeding with selection weights 
