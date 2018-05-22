@@ -36,7 +36,7 @@ boundaries[0] = (-50, 50)
 boundaries[1] = (20, 200)
 ...
 ```
-and pass this to the **boundaries** argument to the **Population** constructor:
+and pass this to the *boundaries* argument to the **Population** constructor:
 ```python
 population = fmga.Population(f, population_size=60, boundaries=boundaries)
 ```
