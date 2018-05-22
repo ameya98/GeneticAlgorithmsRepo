@@ -4,13 +4,7 @@
 
 # libraries for the genetic algorithm
 from random import randint, uniform
-from math import sin, exp, pi
-
-# objective function to maximise
-def objective_function(x, y):
-    return (10 * sin((5 * pi * x)/(2 * 100)) ** 2) * (10 * sin((5 * pi * y)/(2 * 100)) ** 2) * exp(-(x + y)/100)
-    # return 1/(x + y + 1)
-    # return x + y if x > 50 else y - x
+import numpy as np
 
 
 # a weighted choice function
@@ -25,24 +19,31 @@ def weighted_choice(choices, weights):
             return choices[index]
 
 
-# Point2D class and method definitions
-class Point2D:
-    # create random 2D point within boundaries [x_min, x_max] and [y_min, y_max]
-    def __init__(self, x_min=0, x_max=100, y_min=0, y_max=100, mutation_range=5):
+# point class and method definitions
+class Point:
+    # create random n-dimensional point within boundaries
+    def __init__(self, boundaries=None, dimensions=2, mutation_range=5):
 
-        if x_min > x_max:
-            raise ValueError("x_min greater than x_max.")
+        if boundaries is None:
+            boundaries = {}
+            for dimension in range(dimensions):
+                boundaries[dimension] = (0, 100)
+        else:
+            if type(boundaries) is not dict:
+                raise TypeError("boundaries not passed as a dictionary object.")
+            else:
+                for dimension in range(dimensions):
+                    if dimension not in boundaries:
+                        boundaries[dimension] = (0, 100)
+                    else:
+                        if type(boundaries[dimension]) is not tuple:
+                            raise TypeError("boundary entry not passed as a tuple.")
+                        else:
+                            if float(boundaries[dimension][0]) > float(boundaries[dimension][1]):
+                                raise ValueError("min greater than max in boundary entry.")
 
-        if y_min > y_max:
-            raise ValueError("y_min greater than y_max.")
-
-        self.x_min = x_min
-        self.x_max = x_max
-        self.y_min = y_min
-        self.y_max = y_max
-
-        self.x = uniform(x_min, x_max)
-        self.y = uniform(y_min, y_max)
+        self.boundaries = boundaries
+        self.coordinates = np.array([uniform(boundaries[dimension][0], boundaries[dimension][1]) for dimension in range(dimensions)])
 
         self.index = -1
         self.fitness = 0.0
@@ -54,7 +55,7 @@ class Point2D:
     # fitness score - objective function evaluated at the point
     def evaluate_fitness(self, eval_function=None):
         try:
-            self.fitness = eval_function(self.x, self.y)
+            self.fitness = eval_function(*self.coordinates)
             return self.fitness
         except TypeError:
             print("function passed is invalid.")
@@ -62,31 +63,19 @@ class Point2D:
 
     # mutation
     def mutate(self):
-        index = randint(0, 1)
-        if index == 0:
-            self.x += uniform(-self.mutation_range, self.mutation_range)
+        # choose the index at random
+        index = randint(0, np.size(self.coordinates) - 1)
+        self.coordinates[index] += uniform(-self.mutation_range, self.mutation_range)
 
-            # point shouldn't mutate out of range!
-            self.x = min(self.x, self.x_max)
-            self.x = max(self.x, self.x_min)
-        else:
-            self.y += uniform(-self.mutation_range, self.mutation_range)
-
-            # point shouldn't mutate out of range!
-            self.y = min(self.y, self.y_max)
-            self.y = max(self.y, self.y_min)
+        # point shouldn't mutate out of range!
+        self.coordinates[index] = min(self.boundaries[index][0], self.coordinates[index])
+        self.coordinates[index] = max(self.boundaries[index][1], self.coordinates[index])
 
 
 # Population class and method definition
-class population2D:
-    def __init__(self, population_size=60, objective_function=None, elite_fraction=0.1, mutation_probability=0.05,
-                 x_min=0, x_max=100, y_min=0, y_max=100, mutation_range=5, verbose=2):
-
-        if x_min > x_max:
-            raise ValueError("Parameter x_min greater than x_max.")
-
-        if y_min > y_max:
-            raise ValueError("Parameter y_min greater than y_max.")
+class Population:
+    def __init__(self, objective_function=None, population_size=60, boundaries=None,
+                 elite_fraction=0.1, mutation_probability=0.05, mutation_range=5, verbose=2):
 
         if elite_fraction > 1.0 or elite_fraction < 0.0:
             raise ValueError("Parameter 'elite_fraction' must be in range [0,1].")
@@ -97,25 +86,31 @@ class population2D:
         if verbose not in [0, 1, 2]:
             raise ValueError("Parameter verbose must be one of 0, 1 or 2.")
 
+        try:
+            self.num_dimensions = objective_function.__code__.co_argcount
+        except TypeError:
+            print("Invalid function passed.")
+            raise
+
         self.points = []
         self.size = population_size
         self.objective_function = objective_function
         self.elite_population_size = int(elite_fraction * self.size)
         self.mutation_probability = mutation_probability
-        self.coordinate_range = ((x_min, x_max), (y_min, y_max))
+        self.boundaries = boundaries
         self.verbose = verbose
 
         for pointnumber in range(self.size):
-            point = Point2D(x_min=x_min, x_max=x_max, y_min=y_min, y_max=y_max, mutation_range=mutation_range)
+            point = Point(boundaries=self.boundaries, dimensions=self.num_dimensions, mutation_range=mutation_range)
+            point.evaluate_fitness(self.objective_function)
             self.points.append(point)
             self.points[pointnumber].index = pointnumber
 
         self.evaluated_fitness_ranks = False
         self.evaluated_diversity_ranks = False
         self.mean_fitness = 0
+        self.mean_coordinates = np.zeros((self.num_dimensions, 1))
         self.mean_diversity = 0
-        self.x_mean = 0
-        self.y_mean = 0
         self.num_iterations = 1
 
         # evaluate the ranks
@@ -125,15 +120,9 @@ class population2D:
     # evaluate fitness rank of each point in population
     def __evaluate_fitness_ranks(self):
         if not self.evaluated_fitness_ranks:
+            self.mean_fitness = np.sum(point.fitness for point in self.points) / self.size
 
-            self.mean_fitness = 0
-            for point in self.points:
-                point.evaluate_fitness(self.objective_function)
-                self.mean_fitness += point.fitness
-
-            self.mean_fitness /= self.size
             self.points.sort(key=lambda point: point.fitness, reverse=True)
-
             for rank_number in range(self.size):
                 self.points[rank_number].fitness_rank = rank_number
 
@@ -142,25 +131,15 @@ class population2D:
     # evaluate diversity rank of each point in population
     def __evaluate_diversity_ranks(self):
         if not self.evaluated_diversity_ranks:
-            # find mean x and y coordinates
-            self.x_mean = 0
-            self.y_mean = 0
+            # find mean coordinates
+            self.mean_coordinates = np.sum(point.coordinates for point in self.points) / self.size
 
             for point in self.points:
-                self.x_mean += point.x
-                self.y_mean += point.y
+                point.diversity = np.sum(np.abs(point.coordinates - self.mean_coordinates))
 
-            self.x_mean /= self.size
-            self.y_mean /= self.size
+            self.mean_diversity = np.sum(point.diversity for point in self.points) / self.size
 
-            self.mean_diversity = 0
-            for point in self.points:
-                point.diversity = (abs(point.x - self.x_mean) + abs(point.y - self.y_mean))
-                self.mean_diversity += point.diversity
-
-            self.mean_diversity /= self.size
             self.points.sort(key=lambda point: point.diversity, reverse=True)
-
             for rank_number in range(self.size):
                 self.points[rank_number].diversity_rank = rank_number
 
@@ -239,7 +218,7 @@ class population2D:
 
         self.num_iterations += 1
 
-    # perform the iterations
+    # perform the iterations sequentially
     def converge(self, iterations=15):
         for iteration in range(1, iterations + 1):
             self.iterate()
@@ -258,36 +237,12 @@ class population2D:
 
 # crossover (breed) 2 points by swapping x-coordinates
 def crossover(point1, point2):
-    child1 = Point2D(x_min=point1.x_min, x_max=point2.x_max, y_min=point1.y_min, y_max=point1.y_max,
-                     mutation_range=point1.mutation_range)
-    child2 = Point2D(x_min=point2.x_min, x_max=point2.x_max, y_min=point2.y_min, y_max=point2.y_max,
-                     mutation_range=point2.mutation_range)
+    child1 = Point(boundaries=point1.boundaries, dimensions=np.size(point1.coordinates), mutation_range=point1.mutation_range)
+    child2 = Point(boundaries=point1.boundaries, dimensions=np.size(point1.coordinates), mutation_range=point1.mutation_range)
 
-    child1.x = point1.x
-    child1.y = point2.y
+    splitpoint = randint(1, np.size(point1.coordinates))
 
-    child2.x = point2.x
-    child2.y = point1.y
+    child1.coordinates = np.concatenate([point1.coordinates[:splitpoint], point2.coordinates[splitpoint:]])
+    child2.coordinates = np.concatenate([point2.coordinates[:splitpoint], point1.coordinates[splitpoint:]])
 
     return child1, child2
-
-
-if __name__ == "__main__":
-    # initialize the population
-    population = population2D(population_size=60, objective_function=objective_function)
-
-    # print the initial stats
-    print("Initial Population")
-    print("Mean fitness =", population.mean_fitness)
-    print("Mean L1 diversity =", population.mean_diversity)
-    print()
-
-    # breed and mutate for 15 iterations
-    population.converge(iterations=15)
-
-    # get the best_estimate
-    best_point = population.best_estimate()
-
-    # print the stats
-    print("Function Maximum Estimate =", best_point.fitness)
-    print("Function Maximum Position Estimate =", "(" + str(best_point.x) + ", " + str(best_point.y) + ")")
