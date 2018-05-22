@@ -23,7 +23,7 @@ Given a function on multiple variables, say:
 def f(x, y, z):
     return x - math.sin(y) * z
 ```
-Pass this function as the *objective_function* argument to the **Population** constructor (lambdas work too!).
+Pass this function as the *objective_function* argument to the **Population** constructor (lambdas work too!).  
 Note that this is the first argument to the constructor, so both of the following will work:
 ```python
 population = fmga.Population(f, population_size=60)
