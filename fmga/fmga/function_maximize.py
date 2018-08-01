@@ -2,55 +2,45 @@
 # Author: Ameya Daigavane #
 # Date: 15th April, 2018 #
 
-# libraries for the genetic algorithm
+# external library dependencies
 from random import randint, uniform
 import numpy as np
 
 
 # a weighted choice function
 def weighted_choice(choices, weights):
-    normalized_weights = [weight/sum(weights) for weight in weights]
-    # print(normalized_weights)
+    normalized_weights = np.array([weight for weight in weights]) / np.sum(weights)
     threshold = uniform(0, 1)
     total = 1
+
     for index, normalized_weight in enumerate(normalized_weights):
         total -= normalized_weight
         if total < threshold:
             return choices[index]
 
 
-# point class and method definitions
+# Point class and method definitions
 class Point:
+
     # create random n-dimensional point within boundaries
-    def __init__(self, boundaries=None, dimensions=2, mutation_range=5):
+    def __init__(self, associated_population=None, dimensions=2):
 
-        if boundaries is None:
-            boundaries = {}
-            for dimension in range(dimensions):
-                boundaries[dimension] = (0, 100)
+        if associated_population is None:
+            self.associated_population = None
+            self.boundaries = [(0, 100) for _ in range(dimensions)]
+            self.mutation_range = 5
         else:
-            if type(boundaries) is not dict:
-                raise TypeError("boundaries not passed as a dictionary object.")
-            else:
-                for dimension in range(dimensions):
-                    if dimension not in boundaries:
-                        boundaries[dimension] = (0, 100)
-                    else:
-                        if type(boundaries[dimension]) is not tuple:
-                            raise TypeError("boundary entry not passed as a tuple.")
-                        else:
-                            if float(boundaries[dimension][0]) > float(boundaries[dimension][1]):
-                                raise ValueError("min greater than max in boundary entry.")
+            self.associated_population = associated_population
+            self.boundaries = associated_population.boundaries
+            self.mutation_range = associated_population.mutation_range
 
-        self.boundaries = boundaries
-        self.coordinates = np.array([uniform(boundaries[dimension][0], boundaries[dimension][1]) for dimension in range(dimensions)])
+        self.coordinates = np.array([uniform(self.boundaries[dimension][0], self.boundaries[dimension][1]) for dimension in range(dimensions)])
 
         self.index = -1
         self.fitness = 0.0
         self.diversity = 0.0
         self.fitness_rank = -1
         self.diversity_rank = -1
-        self.mutation_range = mutation_range
 
     # fitness score - objective function evaluated at the point
     def evaluate_fitness(self, eval_function=None):
@@ -75,7 +65,7 @@ class Point:
 # Population class and method definition
 class Population:
     def __init__(self, objective_function=None, population_size=60, boundaries=None,
-                 elite_fraction=0.1, mutation_probability=0.05, mutation_range=5, verbose=2):
+                 elite_fraction=0.1, mutation_probability=0.05, mutation_range=5, verbose=2, dimensions=None):
 
         if elite_fraction > 1.0 or elite_fraction < 0.0:
             raise ValueError("Parameter 'elite_fraction' must be in range [0,1].")
@@ -86,22 +76,47 @@ class Population:
         if verbose not in [0, 1, 2]:
             raise ValueError("Parameter verbose must be one of 0, 1 or 2.")
 
-        try:
-            self.num_dimensions = objective_function.__code__.co_argcount
-        except TypeError:
-            print("Invalid function passed.")
-            raise
+        if dimensions is None:
+            try:
+                # use the function's number of arguments as dimensions
+                self.num_dimensions = objective_function.__code__.co_argcount
+            except TypeError:
+                print("Invalid function passed.")
+                raise
+        else:
+            self.num_dimensions = dimensions
+
+        if boundaries is None:
+            boundaries = []
+            for dimension in range(self.num_dimensions):
+                # default boundaries
+                boundaries.append((0, 100))
+        else:
+            if type(boundaries) is not list:
+                raise TypeError("boundaries not passed as a list.")
+            else:
+                for dimension in range(len(boundaries), self.num_dimensions):
+                    # default boundaries
+                    boundaries.append((0, 100))
+
+                for dimension in range(len(boundaries)):
+                    if type(boundaries[dimension]) is not tuple:
+                        raise TypeError("boundary entry not passed as a tuple.")
+                    else:
+                        if float(boundaries[dimension][0]) > float(boundaries[dimension][1]):
+                            raise ValueError("min greater than max in boundary entry.")
 
         self.points = []
         self.size = population_size
         self.objective_function = objective_function
         self.elite_population_size = int(elite_fraction * self.size)
         self.mutation_probability = mutation_probability
+        self.mutation_range = mutation_range
         self.boundaries = boundaries
         self.verbose = verbose
 
         for pointnumber in range(self.size):
-            point = Point(boundaries=self.boundaries, dimensions=self.num_dimensions, mutation_range=mutation_range)
+            point = Point(associated_population=self, dimensions=self.num_dimensions)
             point.evaluate_fitness(self.objective_function)
             self.points.append(point)
             self.points[pointnumber].index = pointnumber
@@ -237,8 +252,11 @@ class Population:
 
 # crossover (breed) 2 points by swapping x-coordinates
 def crossover(point1, point2):
-    child1 = Point(boundaries=point1.boundaries, dimensions=np.size(point1.coordinates), mutation_range=point1.mutation_range)
-    child2 = Point(boundaries=point1.boundaries, dimensions=np.size(point1.coordinates), mutation_range=point1.mutation_range)
+    if point1.associated_population != point2.associated_population:
+        raise ValueError("Points are from different populations.")
+
+    child1 = Point(associated_population=point1.associated_population, dimensions=np.size(point1.coordinates))
+    child2 = Point(associated_population=point2.associated_population, dimensions=np.size(point2.coordinates))
 
     splitpoint = randint(1, np.size(point1.coordinates))
 

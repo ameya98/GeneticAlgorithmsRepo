@@ -11,22 +11,21 @@ from networkx.algorithms import approximation
 
 # global configuration settings
 # note: keep population_size and elite_population_size of same parity
-num_vertices = 100
 population_size = 30
 elite_population_size = 8
 mutation_probability = 0.04
-num_iterations = 15
+num_iterations = 5
 
 # create graph G - a networkx undirected graph
 # G = nx.gnp_random_graph(num_vertices, 0.2)
 # G = nx.karate_club_graph()
-G = nx.gnm_random_graph(20, 3)
+G = nx.gnm_random_graph(1000, 500)
 print(len(G.nodes), len(G.edges))
+
 
 # a weighted choice function
 def weighted_choice(choices, weights):
-    normalized_weights = [weight/sum(weights) for weight in weights]
-    # print(normalized_weights)
+    normalized_weights = np.array([weight for weight in weights]) / np.sum(weights)
     threshold = uniform(0, 1)
     total = 1
     for index, normalized_weight in enumerate(normalized_weights):
@@ -35,17 +34,17 @@ def weighted_choice(choices, weights):
             return choices[index]
 
 
-# Vertex Cover class definitions
+# Vertex Cover class definition
 class VertexCover:
-    def __init__(self, G):
-        # save graph as a copy - will be modified during fitness
-        self.graph = G.copy()
+    def __init__(self, associated_population=None):
+        # population to which this point belongs
+        self.associated_population = associated_population
 
         # randomly create chromosome
-        self.chromosomes = [randint(0, 1) for _ in range(num_vertices)]
+        self.chromosomes = [randint(0, 1) for _ in range(len(self.associated_population.graph.nodes()))]
 
         # initialize
-        self.vertexarray = np.array([False for _ in range(num_vertices)])
+        self.vertexarray = np.array([False for _ in range(len(self.associated_population.graph.nodes()))])
         self.chromosomenumber = 0
         self.vertexlist = np.array([])
 
@@ -59,9 +58,9 @@ class VertexCover:
 
     def evaluate_fitness(self):
         if not self.evaluated_fitness:
-            original_graph = self.graph.copy()
+            original_graph = self.associated_population.graph.copy()
 
-            self.vertexarray = np.array([False for _ in range(num_vertices)])
+            self.vertexarray = np.array([False for _ in range(len(original_graph.nodes()))])
             self.chromosomenumber = 0
 
             while len(original_graph.edges) > 0:
@@ -117,7 +116,7 @@ class VertexCover:
 
             # put all true elements in a numpy array - representing the actual vertex cover
             self.vertexlist = np.where(self.vertexarray == True)[0]
-            self.fitness = 200 / (1 + len(self.vertexlist))
+            self.fitness = len(self.associated_population.graph.nodes()) / (1 + len(self.vertexlist))
             self.evaluated_fitness = True
 
         return self.fitness
@@ -143,15 +142,16 @@ class VertexCover:
     def __iter__(self):
         return iter(self.vertexlist)
 
+
 # class for the 'population' of vertex covers
-class populationVC:
+class Population:
     def __init__(self, G, size):
         self.vertexcovers = []
         self.size = size
         self.graph = G.copy()
 
         for vertex_cover_number in range(self.size):
-            vertex_cover = VertexCover(self.graph)
+            vertex_cover = VertexCover(self)
             vertex_cover.evaluate_fitness()
 
             self.vertexcovers.append(vertex_cover)
@@ -162,7 +162,7 @@ class populationVC:
         self.mean_fitness = 0
         self.mean_diversity = 0
         self.mean_vertex_cover_size = 0
-        self.average_vertices = np.zeros((num_vertices, 1))
+        self.average_vertices = np.zeros((len(self.graph.nodes()), 1))
 
     # evaluate fitness ranks for each vertex cover
     def evaluate_fitness_ranks(self):
@@ -252,8 +252,11 @@ class populationVC:
 
 # crossover between two vertex cover chromosomes
 def crossover(parent1, parent2):
-    child1 = VertexCover(parent1.graph)
-    child2 = VertexCover(parent2.graph)
+    if parent1.associated_population != parent2.associated_population:
+        raise ValueError("Vertex covers belong to different populations.")
+
+    child1 = VertexCover(parent1.associated_population)
+    child2 = VertexCover(parent2.associated_population)
 
     # find the point to split and rejoin the chromosomes
     # note that chromosome number + 1 is the actual length of the chromosome in each vertex cover encoding
@@ -286,7 +289,7 @@ def is_valid_vertex_cover(vertex_cover):
 
 # main logic begins here #
 # initialise vertex cover population
-population = populationVC(G, population_size)
+population = Population(G, population_size)
 population.evaluate_fitness_ranks()
 population.evaluate_diversity_ranks()
 
@@ -331,9 +334,10 @@ for iteration in range(1, num_iterations + 1):
     print()
 
 # vertex cover with best fitness is our output
-best_vertex_cover = VertexCover(G)
+best_vertex_cover = None
+best_fitness = 0
 for vertex_cover in population.vertexcovers:
-    if vertex_cover.fitness > best_vertex_cover.fitness:
+    if vertex_cover.fitness > best_fitness:
         best_vertex_cover = vertex_cover
 
 print("Best Vertex Cover Size =", len(best_vertex_cover))
