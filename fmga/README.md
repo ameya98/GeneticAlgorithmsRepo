@@ -23,8 +23,22 @@ Given a function on multiple variables, say:
 def f(x, y, z):
     return x - math.sin(y) * z
 ```
-Pass this function as the *objective_function* argument to the **Population** constructor (lambdas work too!).  
+Pass this function as the *objective_function* argument to the .maximize() method (lambdas work too!).  
+
+```python
+best_point = fmga.maximize(f, population_size=60, dimensions=3)
+```
+
+The **.maximize()** method creates a **Population** of **Point** objects, calls the **.converge()** method on the Population object, and finally,
+returns a **Point** object representing the n-dimensional point with best fitness.
+
+```python
+print(best_point, best_point.fitness)
+```
+
 fmga also supports a variable number of dimensions to optimise over, passed as the *dimensions* argument, which defaults to the number of arguments of the objective function passed.
+
+If you wish to interact with the **Population** object directly, you can.
 Both of the following work:
 ```python
 population = fmga.Population(f, population_size=60, dimensions=3)
@@ -35,9 +49,10 @@ If you wish to define custom boundaries, create a list of tuples, for each dimen
 ```python
 boundaries = [(0, 2.5), (0, 10)]
 ```
-and pass this as the *boundaries* argument to the **Population** constructor:
+and pass this as the *boundaries* argument to the **Population** constructor or the **.maximise()** method:
 ```python
 population = fmga.Population(f, population_size=60, boundaries=boundaries)
+best_point = fmga.maximize(f, population_size=60, boundaries=boundaries)
 ```
 Note that the default range for missing dimensions is (0, 100).  
 The population can be set to breed and iterate by using the **.converge()** method.
@@ -76,5 +91,8 @@ The Population constructor takes the following arguments, in order:
 **mutation_probability** (default = 0.05) How likely is is for a single point to mutate - this probability is the same for all points in the population.
 Must be between 0 and 1, inclusive.  
 **mutation_range** (default = 5) The range of the mutation when it does occur. Note that the point will never mutate out of the domain defined!  
-**verbose** (default = 2) How much output to be displayed when iterating population after population. Must take values 0, 1 or 2 with 2 representing the most output, and 0 representing none.  
+**verbose** (default = 2) How much output to be displayed when iterating population after population. Must take values 0, 1 or 2 with 2 representing the most output, and 0 representing none.   
 **dimensions** (default = number of arguments of objective_function) The dimensionality of the points and the number of variables to maximize over.
+ 
+The **maximize()** method takes all of the above in the same order, as well as a **iterations** argument,
+defaulting to 15, signifying the number of iterations that the underlying population undergoes.

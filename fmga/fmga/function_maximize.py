@@ -61,6 +61,9 @@ class Point:
         self.coordinates[index] = min(self.boundaries[index][0], self.coordinates[index])
         self.coordinates[index] = max(self.boundaries[index][1], self.coordinates[index])
 
+    def __repr__(self):
+        return repr(self.coordinates)
+
 
 # Population class and method definition
 class Population:
@@ -264,3 +267,13 @@ def crossover(point1, point2):
     child2.coordinates = np.concatenate([point2.coordinates[:splitpoint], point1.coordinates[splitpoint:]])
 
     return child1, child2
+
+
+def maximize(objective_function=None, population_size=60, boundaries=None, elite_fraction=0.1,
+             mutation_probability=0.05, mutation_range=5, verbose=2, dimensions=None, iterations=15):
+
+    population = Population(objective_function, population_size, boundaries, elite_fraction, mutation_probability, mutation_range, verbose, dimensions)
+    population.converge(iterations)
+
+    return population.best_estimate()
+

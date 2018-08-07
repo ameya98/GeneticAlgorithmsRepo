@@ -2,12 +2,11 @@
 An assortment of genetic algorithms - all written from scratch, for Python 3.5.
 ### Objective Function Maximization
 
-![](functionplot.png)  
+![](functionplot.png)  ![](meanstats.png)
 
 **fmga** takes an objective function of multiple variables and samples an evolving population of points converging to the function maxima.
 
-fmga is now available on PyPI! (Latest version: 2.0.0)   
-Install with
+fmga is now available on PyPI! (Latest version: 2.1.0)   
 ```bash
 pip install fmga
 ```
@@ -22,7 +21,6 @@ inversely proportional to fitness and diversity ranks.
 and L1 diversity through the iterations.  
 Completely customizable - licensed under the MIT License.
 
-![](meanstats.png)
 
 ### Minimum Vertex Cover for Graphs
 **vertex_cover.py** gives a genetic algorithm heuristic to the well-known NP-Complete Minimum Vertex Cover problem - given a graph, find a subset of its vertices such that every edge has an endpoint in this subset.  
