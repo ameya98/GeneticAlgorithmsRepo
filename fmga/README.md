@@ -6,7 +6,7 @@ The idea is to sample an evolving population of points converging to the functio
 
 The population of n-dimensional points undergoes random mutations - and is selected through elitism and ranking selection with selection weights inversely proportional to fitness and diversity ranks.
 
-**fmga** now supports multiprocessing through **pathos** too! 
+**fmga** now supports multiprocessing through **[pathos](https://github.com/uqfoundation/pathos)** too! 
 
 ### Installation
 Install with pip:

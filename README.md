@@ -5,7 +5,7 @@ An assortment of genetic algorithms - all written from scratch, for Python 3.5.
 ![](functionplot.png)  
 
 **fmga** is a genetic algorithms package for arbitrary function maximization.  
-fmga is available on PyPI - latest version 2.3.0 - and now supports multiprocessing!   
+fmga is available on PyPI - latest version 2.4.0 - and now supports multiprocessing!   
 ```bash
 pip install fmga
 ```

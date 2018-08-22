@@ -1,5 +1,5 @@
 ## testing the global package
-import fmga
+from fmga import maximize
 import math
 
 
@@ -11,6 +11,6 @@ if __name__ == '__main__':
             sum += math.sin(num)
         return sum
 
-    best_point = maximize(f, dimensions=3, mutation_probability=0.1, population_size=100, multiprocessing=True, iterations=5)
+    best_point = maximize(f, dimensions=3, mutation_probability=0.1, population_size=100, multiprocessing=False, iterations=5)
     print(best_point.coordinates, best_point.fitness)
 
