@@ -4,20 +4,18 @@ An assortment of genetic algorithms - all written from scratch, for Python 3.5.
 
 ![](functionplot.png)  
 
-**fmga** takes an objective function of multiple variables and samples an evolving population of points converging to the function maxima.
-
-fmga is now available on PyPI! (Latest version: 2.2.0)   
+**fmga** is a genetic algorithms package for arbitrary function maximization.  
+fmga is available on PyPI - latest version 2.3.0 - and now supports multiprocessing!   
 ```bash
 pip install fmga
 ```
-
-For more details, please see the README markdown file in the **fmga** subdirectory.
+For more details, please see the README in the **fmga** subdirectory.
 
 The objective function doesn't have to be differentiable, or even continuous in the specified domain!  
-The population of multi-dimensional points undergoes random mutations - and is selected through elitism along with breeding with selection weights 
+The population of multi-dimensional points undergoes random mutations - and is selected through elitism and raking selection with selection weights 
 inversely proportional to fitness and diversity ranks.  
 
-**function_maximize_plots.py** contains relevant code on obtaining surface plots of the function (if 2-dimensional), initial population and final population graphs, as well as line plots of mean population fitness 
+**fmga_plots.py** contains relevant code on obtaining surface plots of the function (if 2-dimensional), initial population and final population graphs, as well as line plots of mean population fitness 
 and L1 diversity through the iterations.  
 Completely customizable - licensed under the MIT License.
 
@@ -30,5 +28,5 @@ A [networkx](https://networkx.github.io/) graph is used as an input - and a popu
 As above, elitism and breeding with selection weights inversely proportional to fitness and diversity ranks are used to generate the new population.  
 The fitness of each vertex cover is defined as: 
 <p align="center"> 
-<img src="https://latex.codecogs.com/gif.latex?fitness%28VC%29%20%3D%20%5Cfrac%7B200%7D%7B1&plus;VC.length%7D")
+<img src="https://latex.codecogs.com/gif.latex?%5Cfrac%7B%7CV%7C%7D%7B1%20&plus;%20%7CVC%7C%7D")
 </p>
