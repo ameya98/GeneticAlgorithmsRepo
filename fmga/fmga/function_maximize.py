@@ -5,6 +5,7 @@
 # external library dependencies
 from random import randint, uniform
 import numpy as np
+import pathos.multiprocessing as mp
 
 
 # a weighted choice function
@@ -67,8 +68,9 @@ class Point:
 
 # Population class and method definition
 class Population:
-    def __init__(self, objective_function=None, population_size=60, boundaries=None,
-                 elite_fraction=0.1, mutation_probability=0.05, mutation_range=5, verbose=2, dimensions=None):
+    def __init__(self, objective_function=None, dimensions=None, population_size=60, boundaries=None,
+                 elite_fraction=0.1, mutation_probability=0.05, mutation_range=5, verbose=2,
+                 multiprocessing=False, processes=8):
 
         if elite_fraction > 1.0 or elite_fraction < 0.0:
             raise ValueError("Parameter 'elite_fraction' must be in range [0,1].")
@@ -117,29 +119,51 @@ class Population:
         self.mutation_range = mutation_range
         self.boundaries = boundaries
         self.verbose = verbose
-
-        for pointnumber in range(self.size):
-            point = Point(associated_population=self, dimensions=self.num_dimensions)
-            point.evaluate_fitness(self.objective_function)
-            self.points.append(point)
-            self.points[pointnumber].index = pointnumber
-
         self.evaluated_fitness_ranks = False
         self.evaluated_diversity_ranks = False
         self.mean_fitness = 0
         self.mean_coordinates = np.zeros((self.num_dimensions, 1))
         self.mean_diversity = 0
         self.num_iterations = 1
+        self.multiprocessing = multiprocessing
+
+        # create points
+        for pointnumber in range(self.size):
+            point = Point(associated_population=self, dimensions=self.num_dimensions)
+            self.points.append(point)
+            self.points[pointnumber].index = pointnumber
+
+        if self.multiprocessing:
+            # create pool of processes
+            if processes is None:
+                self.pool = mp.ProcessingPool()
+            else:
+                self.pool = mp.ProcessingPool(ncpus=processes)
+
+            fitnesses = self.pool.map(Point.evaluate_fitness, self.points, [self.objective_function] * len(self.points))
+            # fitnesses = self.pool.map(Population.__objective_function_wrapper, [point.coordinates for point in self.points], [self.objective_function] * len(self.points))
+
+            # assign fitnesses to each point
+            for index, point in enumerate(self.points):
+                point.fitness = fitnesses[index]
+        else:
+            for point in self.points:
+                point.evaluate_fitness(self.objective_function)
 
         # evaluate the ranks
         self.__evaluate_fitness_ranks()
         self.__evaluate_diversity_ranks()
+
+    # a wrapper over the objective function to pass only a tuple - for the multiprocessing part
+    def __objective_function_wrapper(self, args):
+        return self.objective_function(*args)
 
     # evaluate fitness rank of each point in population
     def __evaluate_fitness_ranks(self):
         if not self.evaluated_fitness_ranks:
             self.mean_fitness = np.sum(point.fitness for point in self.points) / self.size
 
+            # sort and assign ranks
             self.points.sort(key=lambda point: point.fitness, reverse=True)
             for rank_number in range(self.size):
                 self.points[rank_number].fitness_rank = rank_number
@@ -189,18 +213,26 @@ class Population:
             # breed now
             child1, child2 = crossover(self.points[parent1], self.points[parent2])
 
-            # evaluate fitnesses of children
-            child1.evaluate_fitness(self.objective_function)
-            child2.evaluate_fitness(self.objective_function)
-
             # add the children
             newpopulation.append(child1)
-
             if len(newpopulation) < self.size:
                 newpopulation.append(child2)
 
         # assign the new population
         self.points = newpopulation
+
+        # evaluate fitnesses of new population points
+        if self.multiprocessing:
+            # reuse process pool
+            fitnesses = self.pool.map(Point.evaluate_fitness, self.points, [self.objective_function] * len(self.points))
+
+            # assign fitnesses to each point
+            for index, point in enumerate(self.points):
+                point.fitness = fitnesses[index]
+        else:
+            for point in self.points:
+                point.evaluate_fitness(self.objective_function)
+
         self.evaluated_fitness_ranks = False
         self.evaluated_diversity_ranks = False
 
@@ -269,10 +301,11 @@ def crossover(point1, point2):
     return child1, child2
 
 
-def maximize(objective_function=None, population_size=60, boundaries=None, elite_fraction=0.1,
-             mutation_probability=0.05, mutation_range=5, verbose=2, dimensions=None, iterations=15):
+def maximize(objective_function=None, dimensions=None, population_size=60, boundaries=None, elite_fraction=0.1,
+             mutation_probability=0.05, mutation_range=5, verbose=2, iterations=15, multiprocessing=False, processes=None):
 
-    population = Population(objective_function, population_size, boundaries, elite_fraction, mutation_probability, mutation_range, verbose, dimensions)
+    population = Population(objective_function, dimensions, population_size, boundaries, elite_fraction,
+                            mutation_probability, mutation_range, verbose, multiprocessing, processes)
     population.converge(iterations)
 
     return population.best_estimate()

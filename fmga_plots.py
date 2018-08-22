@@ -3,7 +3,7 @@
 # Date: 15th April, 2018 #
 
 # libraries for the genetic algorithm
-from fmga import population2D
+from fmga import Population
 from math import sin, pi, exp
 
 # libraries for the plots
@@ -41,13 +41,13 @@ plt.show()
 
 # actual algorithm code starts here #
 # initial population
-population = population2D(population_size=60, objective_function=f)
+population = Population(population_size=60, objective_function=f)
 
 # for plotting
 plot_fitness = [population.mean_fitness]
 plot_diversity = [population.mean_diversity]
-population_x_vals = [point.x for point in population.points]
-population_y_vals = [point.y for point in population.points]
+population_x_vals = [point.coordinates[0] for point in population.points]
+population_y_vals = [point.coordinates[1] for point in population.points]
 
 plt.scatter(population_x_vals, population_y_vals)
 plt.title("Initial Population")
@@ -81,12 +81,12 @@ for iteration in range(1, 16):
 best_point = population.best_estimate()
 
 print("Function Maximum Estimate =", best_point.fitness)
-print("Function Maximum Position Estimate =", "(" + str(best_point.x) + ", " + str(best_point.y) + ")")
+print("Function Maximum Position Estimate =", "(" + str(best_point.coordinates[0]) + ", " + str(best_point.coordinates[1]) + ")")
 
 # plotting again
 # plot final population points
-population_x_vals = [point.x for point in population.points]
-population_y_vals = [point.y for point in population.points]
+population_x_vals = [point.coordinates[0] for point in population.points]
+population_y_vals = [point.coordinates[1] for point in population.points]
 
 plt.scatter(population_x_vals, population_y_vals, color='r')
 plt.title("Final Population")
