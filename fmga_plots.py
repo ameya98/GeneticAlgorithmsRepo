@@ -1,6 +1,6 @@
-# Testing the fmga package#
-# Author: Ameya Daigavane #
-# Date: 15th April, 2018 #
+# Testing the fmga package #
+# Author: Ameya Daigavane  #
+# Date: 15th April, 2018   #
 
 # libraries for the genetic algorithm
 from fmga import Population

@@ -6,7 +6,7 @@ An assortment of genetic algorithms - all written from scratch, for Python 3.5.
 
 **fmga** takes an objective function of multiple variables and samples an evolving population of points converging to the function maxima.
 
-fmga is now available on PyPI! (Latest version: 2.1.0)   
+fmga is now available on PyPI! (Latest version: 2.2.0)   
 ```bash
 pip install fmga
 ```

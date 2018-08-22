@@ -140,8 +140,7 @@ class Population:
             else:
                 self.pool = mp.ProcessingPool(ncpus=processes)
 
-            fitnesses = self.pool.map(Point.evaluate_fitness, self.points, [self.objective_function] * len(self.points))
-            # fitnesses = self.pool.map(Population.__objective_function_wrapper, [point.coordinates for point in self.points], [self.objective_function] * len(self.points))
+            fitnesses = self.pool.map(lambda coordinates, func: func(*coordinates), [point.coordinates for point in self.points], [self.objective_function] * self.size)
 
             # assign fitnesses to each point
             for index, point in enumerate(self.points):
@@ -153,10 +152,6 @@ class Population:
         # evaluate the ranks
         self.__evaluate_fitness_ranks()
         self.__evaluate_diversity_ranks()
-
-    # a wrapper over the objective function to pass only a tuple - for the multiprocessing part
-    def __objective_function_wrapper(self, args):
-        return self.objective_function(*args)
 
     # evaluate fitness rank of each point in population
     def __evaluate_fitness_ranks(self):
@@ -224,7 +219,7 @@ class Population:
         # evaluate fitnesses of new population points
         if self.multiprocessing:
             # reuse process pool
-            fitnesses = self.pool.map(Point.evaluate_fitness, self.points, [self.objective_function] * len(self.points))
+            fitnesses = self.pool.map(lambda coordinates, func: func(*coordinates), [point.coordinates for point in self.points], [self.objective_function] * self.size)
 
             # assign fitnesses to each point
             for index, point in enumerate(self.points):
@@ -302,7 +297,7 @@ def crossover(point1, point2):
 
 
 def maximize(objective_function=None, dimensions=None, population_size=60, boundaries=None, elite_fraction=0.1,
-             mutation_probability=0.05, mutation_range=5, verbose=2, iterations=15, multiprocessing=False, processes=None):
+             mutation_probability=0.05, mutation_range=5, verbose=2, multiprocessing=False, processes=None, iterations=15):
 
     population = Population(objective_function, dimensions, population_size, boundaries, elite_fraction,
                             mutation_probability, mutation_range, verbose, multiprocessing, processes)

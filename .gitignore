@@ -10,6 +10,7 @@ vcga/vcga/*
 
 !fmga/fmga/function_maximize.py
 !fmga/README.md
+!fmga/LICENSE
 
 !vcga/vcga/vertex_cover.py
 !vcga/README.md
@@ -20,3 +21,4 @@ __pycache__
 
 # just the test
 function_maximize_test.py
+multiprocessing_test.py
