@@ -2,7 +2,8 @@
 An assortment of genetic algorithms - all written from scratch, for Python 3.5.
 ### Objective Function Maximization
 
-![](functionplot.png)  
+![](functionplot.png)  ![](fmga_spiral_neuro.png)  
+A neural network trained by **fmga** by code in **fmga_neuro.py**, inspired by [this](http://cs231n.github.io/neural-networks-case-study/) exercise.
 
 **fmga** is a genetic algorithms package for arbitrary function maximization.  
 fmga is available on PyPI - latest version 2.4.0 - and now supports multiprocessing!   
@@ -12,7 +13,7 @@ pip install fmga
 For more details, please see the README in the **fmga** subdirectory.
 ```python
 import fmga
-fmga.maximize(f, population_size=200, iterations=40)
+fmga.maximize(f, population_size=200, multiprocessing=True)
 ```
 The objective function doesn't have to be differentiable, or even continuous in the specified domain!  
 The population of multi-dimensional points undergoes random mutations - and is selected through elitism and raking selection with selection weights 
@@ -21,9 +22,6 @@ inversely proportional to fitness and diversity ranks.
 **fmga_plots.py** contains relevant code on obtaining surface plots of the function (if 2-dimensional), initial population and final population graphs, as well as line plots of mean population fitness 
 and L1 diversity through the iterations.  
 Completely customizable - licensed under the MIT License.
-
-![](fmga_spiral_neuro.png)  
-A neural network trained by **fmga** by code in **fmga_neuro.py**, inspired by [this](http://cs231n.github.io/neural-networks-case-study/) exercise.
 
 ### Minimum Vertex Cover for Graphs
 **vertex_cover.py** gives a genetic algorithm heuristic to the well-known NP-Complete Minimum Vertex Cover problem - given a graph, find a subset of its vertices such that every edge has an endpoint in this subset.  
