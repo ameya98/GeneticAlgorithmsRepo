@@ -10,7 +10,10 @@ fmga is available on PyPI - latest version 2.4.0 - and now supports multiprocess
 pip install fmga
 ```
 For more details, please see the README in the **fmga** subdirectory.
-
+```python
+import fmga
+fmga.maximize(f, population_size=200, iterations=40)
+```
 The objective function doesn't have to be differentiable, or even continuous in the specified domain!  
 The population of multi-dimensional points undergoes random mutations - and is selected through elitism and raking selection with selection weights 
 inversely proportional to fitness and diversity ranks.  
@@ -19,7 +22,8 @@ inversely proportional to fitness and diversity ranks.
 and L1 diversity through the iterations.  
 Completely customizable - licensed under the MIT License.
 
-![](meanstats.png)
+![](fmga_spiral_neuro.png)  
+A neural network trained by **fmga** by code in **fmga_neuro.py**, inspired by [this](http://cs231n.github.io/neural-networks-case-study/) exercise.
 
 ### Minimum Vertex Cover for Graphs
 **vertex_cover.py** gives a genetic algorithm heuristic to the well-known NP-Complete Minimum Vertex Cover problem - given a graph, find a subset of its vertices such that every edge has an endpoint in this subset.  

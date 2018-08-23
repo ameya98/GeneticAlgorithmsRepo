@@ -1,6 +1,9 @@
-# Genetic Algorithms - Objective Function Maximization #
-# Author: Ameya Daigavane #
-# Date: 15th April, 2018 #
+'''
+fmga
+Genetic Algorithms - Objective Function Maximization
+Author: Ameya Daigavane
+Date: 15th April, 2018
+'''
 
 # external library dependencies
 from random import randint, uniform
