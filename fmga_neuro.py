@@ -60,9 +60,9 @@ if __name__ == '__main__':
 
         return -(data_loss + reg_loss)
 
-    bounds = [(-4, 4) for _ in range((D*h + h + h*K + K))]
-    best_params = fmga.maximize(cross_entropy_loss, dimensions=(D*h + h + h*K + K), population_size=200, iterations=20,
-                                boundaries=bounds, mutation_range=0.5, mutation_probability=0.15, multiprocessing=False)
+    bounds = [(-7, 7) for _ in range(D*h + h + h*K + K)]
+    best_params = fmga.maximize(cross_entropy_loss, dimensions=(D*h + h + h*K + K), population_size=500, iterations=20,
+                                boundaries=bounds, mutation_range=1, mutation_probability=0.15, elite_fraction=0.15)
     print(best_params.fitness)
 
     W = best_params.coordinates[:D*h].reshape(D, h)
@@ -90,4 +90,4 @@ if __name__ == '__main__':
     plt.xlim(xx.min(), xx.max())
     plt.ylim(yy.min(), yy.max())
     plt.show()
-    fig.savefig('fmga_spiral_neuro.png')
+    # fig.savefig('fmga_spiral_neuro.png')
