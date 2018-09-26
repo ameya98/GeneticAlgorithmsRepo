@@ -31,14 +31,8 @@ if __name__ == '__main__':
     # plt.show()
 
     def cross_entropy_loss(*args):
-        # cast to numpy array
-        np_args = np.asarray(args)
-
-        # unpack and reshape
-        W = np_args[:D * h].reshape(D, h)
-        b = np_args[D * h: D * h + h].reshape(1, h)
-        W2 = np_args[D * h + h: D * h + h + h * K].reshape(h, K)
-        b2 = np_args[D * h + h + h * K:].reshape(1, K)
+        # unpack as numpy arrays
+        W, b, W2, b2 = fmga.unpack(args, [(D, h), (1, h), (h, K), (1, K)])
 
         # hidden layer with ReLU activation
         hidden_layer = np.maximum(0, np.dot(X, W) + b)  # note, ReLU activation
@@ -60,15 +54,15 @@ if __name__ == '__main__':
 
         return -(data_loss + reg_loss)
 
-    bounds = [(-7, 7) for _ in range(D*h + h + h*K + K)]
+    bounds = [(-5, 5) for _ in range(D*h + h + h*K + K)]
     best_params = fmga.maximize(cross_entropy_loss, dimensions=(D*h + h + h*K + K), population_size=500, iterations=20,
-                                boundaries=bounds, mutation_range=1, mutation_probability=0.15, elite_fraction=0.15)
+                                boundaries=bounds, mutation_range=1, mutation_probability=0.1, elite_fraction=0.15, verbose=2)
+
+    # the loss on the best weights
     print(best_params.fitness)
 
-    W = best_params.coordinates[:D*h].reshape(D, h)
-    b = best_params.coordinates[D*h: D*h + h].reshape(1, h)
-    W2 = best_params.coordinates[D*h + h: D*h + h + h*K].reshape(h, K)
-    b2 = best_params.coordinates[D*h + h + h*K:].reshape(1, K)
+    # unpack!
+    W, b, W2, b2 = fmga.unpack(best_params.coordinates, [(D, h), (1, h), (h, K), (1, K)])
 
     hidden_layer = np.maximum(0, np.dot(X, W) + b)
     scores = np.dot(hidden_layer, W2) + b2

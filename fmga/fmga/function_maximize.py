@@ -72,7 +72,7 @@ class Point:
 # Population class and method definition
 class Population:
     def __init__(self, objective_function=None, dimensions=None, population_size=60, boundaries=None,
-                 elite_fraction=0.1, mutation_probability=0.05, mutation_range=5, verbose=2,
+                 elite_fraction=0.1, mutation_probability=0.05, mutation_range=5, verbose=0,
                  multiprocessing=False, processes=8):
 
         if elite_fraction > 1.0 or elite_fraction < 0.0:
@@ -298,13 +298,39 @@ def crossover(point1, point2):
 
     return child1, child2
 
-
+# wrapper for the building of the population and converging
 def maximize(objective_function=None, dimensions=None, population_size=60, boundaries=None, elite_fraction=0.1,
-             mutation_probability=0.05, mutation_range=5, verbose=2, multiprocessing=False, processes=None, iterations=15):
+             mutation_probability=0.05, mutation_range=5, verbose=0, multiprocessing=False, processes=None, iterations=15):
 
     population = Population(objective_function, dimensions, population_size, boundaries, elite_fraction,
                             mutation_probability, mutation_range, verbose, multiprocessing, processes)
     population.converge(iterations)
-
     return population.best_estimate()
+
+
+# helper to unpack arguments with shapes as given
+def unpack(args, shapes):
+    try:
+        np_args = np.array(args)
+        index = 0
+        unpacked_args = []
+
+        for shape in shapes:
+            currprod = 1
+            try:
+                for val in shape:
+                    currprod *= val
+            except TypeError:
+                currprod *= shape
+            finally:
+                unpacked_args.append(np_args[index: index + currprod].reshape(shape))
+                index += currprod
+
+        if len(shapes) > 1:
+            return unpacked_args
+        else:
+            return unpacked_args[0]
+
+    except (TypeError, IndexError):
+        raise
 

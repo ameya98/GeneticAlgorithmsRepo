@@ -97,12 +97,26 @@ The Population constructor takes the following arguments, in order:
 **mutation_probability** (default = 0.05) How likely is is for a single point to mutate - this probability is the same for all points in the population.
 Must be between 0 and 1, inclusive.  
 **mutation_range** (default = 5) The range of the mutation when it does occur. Note that the point will never mutate out of the domain defined!  
-**verbose** (default = 2) How much console output to be displayed when iterating population after population. Must take values 0, 1 or 2 with 2 representing the most output, and 0 representing none.   
+**verbose** (default = 0, was 2 for versions <= 2.4.0) How much console output to be displayed when iterating population after population. Must take values 0, 1 or 2 with 2 representing the most output, and 0 representing none.   
 **multiprocessing** (default = False) Whether multiprocessing is enabled  
 **processes** (default = multiprocessing.cpu_count()) Number of processes to spawn if multiprocessing is enabled. 
 
 The **maximize()** method takes all of the above in the same order, as well as a **iterations** argument,
 defaulting to 15, signifying the number of iterations that the underlying population undergoes.
+
+The **unpack()** method accepts two arguments, a tuple of values and a list of shapes. If the length of the list of shapes is greater than one, it returns a list of numpy arrays of shape according to the list, by reshaping the tuple in-order.
+Otherwise it returns just a numpy array of the passed shape, formed by reshaping the tuple.   
+This is useful when working with a large number of arguments:
+```python
+def f(*args):
+    x, y, z = fmga.unpack(args, (1, (2, 2), 4))
+    
+    # x.shape == (1,)
+    # y.shape == (2, 2)
+    # z.shape == (4,)
+    
+    return x - y[0][0] + z[2]
+```
 
 ## Dependencies
 * numpy
