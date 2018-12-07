@@ -1,4 +1,4 @@
-# GeneticAlgorithmsRepo
+# GeneticAlgorithmsRepo [![codebeat badge](https://codebeat.co/badges/ccb58ecb-0bd0-45ba-aa71-56a6758d9cfe)](https://codebeat.co/projects/github-com-ameya98-geneticalgorithmsrepo-master)  
 An assortment of genetic algorithms - all written from scratch, for Python 3.5.
 ### Objective Function Maximization
 
