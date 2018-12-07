@@ -38,6 +38,7 @@ class Point:
             self.boundaries = associated_population.boundaries
             self.mutation_range = associated_population.mutation_range
 
+        # Initialize coordinates uniformly random in range for each dimension
         self.coordinates = np.array([uniform(self.boundaries[dimension][0], self.boundaries[dimension][1]) for dimension in range(dimensions)])
 
         self.index = -1
@@ -57,11 +58,11 @@ class Point:
 
     # Mutation operator
     def mutate(self):
-        # choose the index at random
+        # Choose an index at random
         index = randint(0, np.size(self.coordinates) - 1)
         self.coordinates[index] += uniform(-self.mutation_range, self.mutation_range)
 
-        # point shouldn't mutate out of range!
+        # Ensure the point doesn't mutate out of range!
         self.coordinates[index] = min(self.boundaries[index][0], self.coordinates[index])
         self.coordinates[index] = max(self.boundaries[index][1], self.coordinates[index])
 
@@ -95,25 +96,22 @@ class Population:
         else:
             self.num_dimensions = dimensions
 
+        # Assign default boundaries if none passed
         if boundaries is None:
             boundaries = []
             for dimension in range(self.num_dimensions):
-                # default boundaries
                 boundaries.append((0, 100))
         else:
-            if type(boundaries) is not list:
-                raise TypeError("boundaries not passed as a list.")
-            else:
+            try:
                 for dimension in range(len(boundaries), self.num_dimensions):
-                    # default boundaries
+                    # Default boundaries
                     boundaries.append((0, 100))
 
                 for dimension in range(len(boundaries)):
-                    if type(boundaries[dimension]) is not tuple:
-                        raise TypeError("boundary entry not passed as a tuple.")
-                    else:
-                        if float(boundaries[dimension][0]) > float(boundaries[dimension][1]):
-                            raise ValueError("min greater than max in boundary entry.")
+                    if float(boundaries[dimension][0]) > float(boundaries[dimension][1]):
+                            raise ValueError("Incorrect value for boundary - min greater than max for range.")
+            except TypeError:
+                    raise TypeError("Boundaries not passed correctly.")
 
         self.points = []
         self.size = population_size
@@ -131,7 +129,7 @@ class Population:
         self.num_iterations = 1
         self.multiprocessing = multiprocessing
 
-        # Create points
+        # Create points as Point objects
         for pointnumber in range(self.size):
             point = Point(associated_population=self, dimensions=self.num_dimensions)
             self.points.append(point)
@@ -302,7 +300,7 @@ def crossover(point1, point2):
     return child1, child2
 
 
-# Wrapper to build a population and converge to function maxima.
+# Wrapper to build a population and converge to function maxima, returning the best point as a Point object
 def maximize(objective_function=None, dimensions=None, population_size=60, boundaries=None, elite_fraction=0.1,
              mutation_probability=0.05, mutation_range=5, verbose=0, multiprocessing=False, processes=None, iterations=15):
 
@@ -314,13 +312,29 @@ def maximize(objective_function=None, dimensions=None, population_size=60, bound
     return population.best_estimate()
 
 
+# Wrapper to build a population and converge to function minima, returning the best point as a Point object
+def minimize(objective_function=None, **kwargs):
+
+    # Negative of objective function
+    def objective_function_neg(*args):
+        return -objective_function(*args)
+
+    # Minimize the function by maximizing the negative of the function.
+    best_point = maximize(objective_function=objective_function_neg, **kwargs)
+    best_point.evaluate_fitness(objective_function)
+
+    return best_point
+
+
 # Helper to unpack arguments with shapes as given
 def unpack(args, shapes):
     try:
+        # Convert passed arguments to a numpy array
         np_args = np.array(args)
         index = 0
         unpacked_args = []
 
+        # Step through the passed arguments and reshape them one-by-one
         for shape in shapes:
             currprod = 1
             try:
