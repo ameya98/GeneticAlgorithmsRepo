@@ -104,9 +104,11 @@ Must be between 0 and 1, inclusive.
 The **maximize()** method takes all of the above in the same order, as well as a **iterations** argument,
 defaulting to 15, signifying the number of iterations that the underlying population undergoes.
 
+The **minimize()** method is a wrapper over the **maximize()** method - replacing the objective function by its negative, and maximizing this new objective function.
+
 The **unpack()** method accepts two arguments, a tuple of values and a list of shapes. If the length of the list of shapes is greater than one, it returns a list of numpy arrays of shape according to the list, by reshaping the tuple in-order.
 Otherwise it returns just a numpy array of the passed shape, formed by reshaping the tuple.   
-This is useful when working with a large number of arguments:
+This is useful when working with a large number of arguments! Example:
 ```python
 def f(*args):
     x, y, z = fmga.unpack(args, (1, (2, 2), 4))
