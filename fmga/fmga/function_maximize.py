@@ -311,23 +311,25 @@ def crossover(point1, point2):
 
 
 # Wrapper to build a population and converge to function maxima, returning the best point as a Point object
-def maximize(objective_function=None, dimensions=None, iterations=15, **kwargs):
+def maximize(objective_function=None, dimensions=None, iterations=15, verbose=0, **kwargs):
 
     population = Population(objective_function=objective_function, dimensions=dimensions, **kwargs)
+    population.converge(iterations=iterations, verbose=verbose)
 
-    population.converge(iterations)
     return population.best_estimate()
 
 
 # Wrapper to build a population and converge to function minima, returning the best point as a Point object
-def minimize(objective_function=None, dimensions=None, iterations=15, **kwargs):
+def minimize(objective_function=None, dimensions=None, iterations=15, verbose=0, **kwargs):
 
     # Negative of the objective function
     def objective_function_neg(*args):
         return -objective_function(*args)
 
     # Minimize the function by maximizing the negative of the function.
-    best_point = maximize(objective_function=objective_function_neg, dimensions=dimensions, iterations=iterations, **kwargs)
+    best_point = maximize(objective_function=objective_function_neg, dimensions=dimensions,
+                          iterations=iterations, verbose=verbose, **kwargs)
+
     best_point.evaluate_fitness(objective_function)
 
     return best_point

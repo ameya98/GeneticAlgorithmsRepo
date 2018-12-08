@@ -87,22 +87,26 @@ print(best_point.fitness)
 ```
 
 ## Population Class Methods
-The Population constructor takes the following arguments, in order:
-
+The Population constructor takes the following arguments, in order:  
 **objective_function** The function to maximize!  
 **dimensions** (default = number of arguments of objective_function) The dimensionality of the points and the number of variables to maximize over.  
+
+From versions 2.8.0 and onward, the PopulationParameters class handles the parameters below. 
+The interface is the same as previous versions, however, so you can pass these arguments to the Population constructor as before.
+
 **population_size** (default = 60) Number of points in the population.  
-**boundaries** (default = (0, 100) for every dimension) Must be a list of tuples. The tuple indicates the domain where the points are spread along that dimension.    
+**boundaries** (default = (0, 100) for every dimension) Must be an iterable of tuples. The tuple indicates the domain where the points are spread along that dimension.    
 **elite_fraction** (default = 0.1) Fraction of the population's points to be kept as elite during breeding. Must be between 0 and 1, inclusive.  
 **mutation_probability** (default = 0.05) How likely is is for a single point to mutate - this probability is the same for all points in the population.
 Must be between 0 and 1, inclusive.  
-**mutation_range** (default = 5) The range of the mutation when it does occur. Note that the point will never mutate out of the domain defined!  
-**verbose** (default = 0, was 2 for versions <= 2.4.0) How much console output to be displayed when iterating population after population. Must take values 0, 1 or 2 with 2 representing the most output, and 0 representing none.   
+**mutation_range** (default = 5) The range of the mutation when it does occur. Note that the point will never mutate out of the domain defined!     
 **multiprocessing** (default = False) Whether multiprocessing is enabled  
 **processes** (default = multiprocessing.cpu_count()) Number of processes to spawn if multiprocessing is enabled. 
 
-The **maximize()** method takes all of the above in the same order, as well as a **iterations** argument,
-defaulting to 15, signifying the number of iterations that the underlying population undergoes.
+The **maximize()** method takes all of the above, an **iterations** argument,
+defaulting to 15, signifying the number of iterations that the underlying population undergoes, as well as a **verbose** argument (default = 0, was 2 for versions <= 2.4.0) denoting how much console output to be displayed after each iteration (Must take values 0, 1 or 2 with 2 representing the most output, and 0 representing none.)
+
+The **converge()** and **iterate()** methods also take the **iterations** and **verbose** arguments.
 
 The **minimize()** method is a wrapper over the **maximize()** method - replacing the objective function by its negative, and maximizing this new objective function.
 
