@@ -70,66 +70,76 @@ class Point:
         return repr(self.coordinates)
 
 
-# Population class and method definition
-class Population:
-    def __init__(self, objective_function=None, dimensions=None, population_size=60, boundaries=None,
-                 elite_fraction=0.1, mutation_probability=0.05, mutation_range=5, verbose=0,
-                 multiprocessing=False, processes=8):
+# Parameter object for the Population parameters
+class PopulationParameters:
+
+    def __init__(self, dimensions, **kwargs):
+        self.num_dimensions = dimensions
+        self.population_size = kwargs.get('population_size', 60)
+        self.boundaries = kwargs.get('boundaries')
+        self.elite_fraction = kwargs.get('elite_fraction', 0.1)
+        self.mutation_probability = kwargs.get('mutation_probability', 0.1)
+        self.mutation_range = kwargs.get('mutation_range', 0.1)
 
         # Data-validation for parameters
-        if elite_fraction > 1.0 or elite_fraction < 0.0:
+        if self.elite_fraction > 1.0 or self.elite_fraction < 0.0:
             raise ValueError("Parameter 'elite_fraction' must be in range [0,1].")
 
-        if mutation_probability > 1.0 or mutation_probability < 0.0:
+        if self.mutation_probability > 1.0 or self.mutation_probability < 0.0:
             raise ValueError("Parameter 'mutation_probability' must be in range [0,1].")
 
-        if verbose not in [0, 1, 2]:
-            raise ValueError("Parameter verbose must be one of 0, 1 or 2.")
+        # Assign default boundaries if nothing passed
+        if self.boundaries is None:
+            self.boundaries = [(0, 100)] * self.num_dimensions
+        else:
+            try:
+                # Default boundaries for missing parameters
+                for dimension in range(len(self.boundaries), self.num_dimensions):
+                    self.boundaries.append((0, 100))
+
+                # Validate passed boundaries
+                for dimension in range(len(self.boundaries)):
+                    if float(self.boundaries[dimension][0]) > float(self.boundaries[dimension][1]):
+                        raise ValueError("Incorrect value for boundary - min greater than max for range.")
+
+            except TypeError:
+                raise TypeError("Boundaries not passed correctly.")
+
+
+# Population class and method definition
+class Population:
+    def __init__(self, objective_function=None, dimensions=None, **kwargs):
 
         if dimensions is None:
             try:
-                # use the function's number of arguments as dimensions
-                self.num_dimensions = objective_function.__code__.co_argcount
+                # Use the objective function's number of arguments as dimensions
+                dimensions = objective_function.__code__.co_argcount
             except TypeError:
-                print("Invalid function passed.")
-                raise
-        else:
-            self.num_dimensions = dimensions
+                raise TypeError("Invalid function passed.")
 
-        # Assign default boundaries if none passed
-        if boundaries is None:
-            boundaries = []
-            for dimension in range(self.num_dimensions):
-                boundaries.append((0, 100))
-        else:
-            try:
-                for dimension in range(len(boundaries), self.num_dimensions):
-                    # Default boundaries
-                    boundaries.append((0, 100))
+        # Construct PopulationParameters object
+        parameters = PopulationParameters(dimensions=dimensions, **kwargs)
 
-                for dimension in range(len(boundaries)):
-                    if float(boundaries[dimension][0]) > float(boundaries[dimension][1]):
-                            raise ValueError("Incorrect value for boundary - min greater than max for range.")
-            except TypeError:
-                    raise TypeError("Boundaries not passed correctly.")
-
-        self.points = []
-        self.size = population_size
         self.objective_function = objective_function
-        self.elite_population_size = int(elite_fraction * self.size)
-        self.mutation_probability = mutation_probability
-        self.mutation_range = mutation_range
-        self.boundaries = boundaries
-        self.verbose = verbose
+        self.num_dimensions = parameters.num_dimensions
+        self.size = parameters.population_size
+        self.elite_population_size = int(parameters.elite_fraction * self.size)
+        self.mutation_probability = parameters.mutation_probability
+        self.mutation_range = parameters.mutation_range
+        self.boundaries = parameters.boundaries
         self.evaluated_fitness_ranks = False
         self.evaluated_diversity_ranks = False
         self.mean_fitness = 0
-        self.mean_coordinates = np.zeros((self.num_dimensions, 1))
         self.mean_diversity = 0
+        self.mean_coordinates = np.zeros((self.num_dimensions, 1))
         self.num_iterations = 1
-        self.multiprocessing = multiprocessing
+
+        # Multiprocessing defaults
+        self.multiprocessing = kwargs.get('multiprocessing', False)
+        self.processes = kwargs.get('processes')
 
         # Create points as Point objects
+        self.points = []
         for pointnumber in range(self.size):
             point = Point(associated_population=self, dimensions=self.num_dimensions)
             self.points.append(point)
@@ -137,10 +147,10 @@ class Population:
 
         # If multiprocessing is enabled, create pool of processes.
         if self.multiprocessing:
-            if processes is None:
+            if self.processes is None:
                 self.pool = mp.ProcessingPool()
             else:
-                self.pool = mp.ProcessingPool(ncpus=processes)
+                self.pool = mp.ProcessingPool(ncpus=self.processes)
 
             fitnesses = self.pool.map(lambda coordinates, func: func(*coordinates), [point.coordinates for point in self.points], [self.objective_function] * self.size)
 
@@ -233,7 +243,7 @@ class Population:
         self.evaluated_fitness_ranks = False
         self.evaluated_diversity_ranks = False
 
-    # mutate population randomly
+    # Mutate population randomly
     def __mutate(self):
         for point in self.points:
             mutate_probability = uniform(0, 1)
@@ -245,21 +255,21 @@ class Population:
                 self.evaluated_diversity_ranks = False
 
     # Perform one iteration of breeding and mutation
-    def iterate(self):
+    def iterate(self, verbose=0):
         # Breed
         self.__breed()
 
         # Mutate
         self.__mutate()
 
-        # Find the new population's fitness and diversity ranks
+        # Find the new population's fitness and diversity ranks.
         self.__evaluate_fitness_ranks()
         self.__evaluate_diversity_ranks()
 
         # Print the population stats, if enabled
-        if self.verbose == 1:
+        if verbose == 1:
             print("Iteration", self.num_iterations, "complete.")
-        elif self.verbose == 2:
+        elif verbose == 2:
             print("Iteration", self.num_iterations, "complete, with statistics:")
             print("Mean fitness =", self.mean_fitness)
             print("Mean L1 diversity =", self.mean_diversity)
@@ -268,9 +278,9 @@ class Population:
         self.num_iterations += 1
 
     # Perform iterations sequentially
-    def converge(self, iterations=15):
+    def converge(self, iterations=15, verbose=0):
         for iteration in range(1, iterations + 1):
-            self.iterate()
+            self.iterate(verbose=verbose)
 
     # The point with best fitness is the estimate of point of maxima
     def best_estimate(self):
@@ -301,26 +311,23 @@ def crossover(point1, point2):
 
 
 # Wrapper to build a population and converge to function maxima, returning the best point as a Point object
-def maximize(objective_function=None, dimensions=None, population_size=60, boundaries=None, elite_fraction=0.1,
-             mutation_probability=0.05, mutation_range=5, verbose=0, multiprocessing=False, processes=None, iterations=15):
+def maximize(objective_function=None, dimensions=None, iterations=15, **kwargs):
 
-    population = Population(objective_function=objective_function, dimensions=dimensions, population_size=population_size,
-                            boundaries=boundaries, elite_fraction=elite_fraction, mutation_probability=mutation_probability,
-                            mutation_range=mutation_range, verbose=verbose, multiprocessing=multiprocessing, processes=processes)
+    population = Population(objective_function=objective_function, dimensions=dimensions, **kwargs)
 
     population.converge(iterations)
     return population.best_estimate()
 
 
 # Wrapper to build a population and converge to function minima, returning the best point as a Point object
-def minimize(objective_function=None, **kwargs):
+def minimize(objective_function=None, dimensions=None, iterations=15, **kwargs):
 
-    # Negative of objective function
+    # Negative of the objective function
     def objective_function_neg(*args):
         return -objective_function(*args)
 
     # Minimize the function by maximizing the negative of the function.
-    best_point = maximize(objective_function=objective_function_neg, **kwargs)
+    best_point = maximize(objective_function=objective_function_neg, dimensions=dimensions, iterations=iterations, **kwargs)
     best_point.evaluate_fitness(objective_function)
 
     return best_point
