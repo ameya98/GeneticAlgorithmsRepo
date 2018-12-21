@@ -35,8 +35,8 @@ class Point:
             self.mutation_range = 5
         else:
             self.associated_population = associated_population
-            self.boundaries = associated_population.boundaries
-            self.mutation_range = associated_population.mutation_range
+            self.boundaries = associated_population.parameters.boundaries
+            self.mutation_range = associated_population.parameters.mutation_range
 
         # Initialize coordinates uniformly random in range for each dimension
         self.coordinates = np.array([uniform(self.boundaries[dimension][0], self.boundaries[dimension][1]) for dimension in range(dimensions)])
@@ -109,7 +109,7 @@ class PopulationParameters:
 # Population class and method definition
 class Population:
     def __init__(self, objective_function=None, dimensions=None, **kwargs):
-
+        # No dimensions argument passed
         if dimensions is None:
             try:
                 # Use the objective function's number of arguments as dimensions
@@ -118,20 +118,15 @@ class Population:
                 raise TypeError("Invalid function passed.")
 
         # Construct PopulationParameters object
-        parameters = PopulationParameters(dimensions=dimensions, **kwargs)
+        self.parameters = PopulationParameters(dimensions=dimensions, **kwargs)
 
         self.objective_function = objective_function
-        self.num_dimensions = parameters.num_dimensions
-        self.size = parameters.population_size
-        self.elite_population_size = int(parameters.elite_fraction * self.size)
-        self.mutation_probability = parameters.mutation_probability
-        self.mutation_range = parameters.mutation_range
-        self.boundaries = parameters.boundaries
+        self.elite_population_size = int(self.parameters.elite_fraction * self.parameters.population_size)
         self.evaluated_fitness_ranks = False
         self.evaluated_diversity_ranks = False
         self.mean_fitness = 0
         self.mean_diversity = 0
-        self.mean_coordinates = np.zeros((self.num_dimensions, 1))
+        self.mean_coordinates = np.zeros((self.parameters.num_dimensions, 1))
         self.num_iterations = 1
 
         # Multiprocessing defaults
@@ -140,8 +135,8 @@ class Population:
 
         # Create points as Point objects
         self.points = []
-        for pointnumber in range(self.size):
-            point = Point(associated_population=self, dimensions=self.num_dimensions)
+        for pointnumber in range(self.parameters.population_size):
+            point = Point(associated_population=self, dimensions=self.parameters.num_dimensions)
             self.points.append(point)
             self.points[pointnumber].index = pointnumber
 
@@ -168,11 +163,11 @@ class Population:
     # Evaluate the fitness rank of each point in the population
     def __evaluate_fitness_ranks(self):
         if not self.evaluated_fitness_ranks:
-            self.mean_fitness = np.sum(point.fitness for point in self.points) / self.size
+            self.mean_fitness = np.sum(point.fitness for point in self.points) / self.parameters.population_size
 
-            # sort and assign ranks
+            # Sort according to decreasing fitness and assign fitness ranks
             self.points.sort(key=lambda point: point.fitness, reverse=True)
-            for rank_number in range(self.size):
+            for rank_number in range(self.parameters.population_size):
                 self.points[rank_number].fitness_rank = rank_number
 
             self.evaluated_fitness_ranks = True
@@ -181,15 +176,18 @@ class Population:
     def __evaluate_diversity_ranks(self):
         if not self.evaluated_diversity_ranks:
             # Find mean coordinates
-            self.mean_coordinates = np.sum(point.coordinates for point in self.points) / self.size
+            self.mean_coordinates = np.sum(point.coordinates for point in self.points) / self.parameters.population_size
 
+            # Evaluate individual diversity as L1 deviation from mean coordinates
             for point in self.points:
                 point.diversity = np.sum(np.abs(point.coordinates - self.mean_coordinates))
 
-            self.mean_diversity = np.sum(point.diversity for point in self.points) / self.size
+            # Population diversity is mean of individual point diversities
+            self.mean_diversity = np.sum(point.diversity for point in self.points) / self.parameters.population_size
 
+            # Sort according to decreasing diversity and assign diversity ranks
             self.points.sort(key=lambda point: point.diversity, reverse=True)
-            for rank_number in range(self.size):
+            for rank_number in range(self.parameters.population_size):
                 self.points[rank_number].diversity_rank = rank_number
 
             self.evaluated_diversity_ranks = True
@@ -208,21 +206,21 @@ class Population:
         weights = [1 / (1 + point.fitness_rank + point.diversity_rank) for point in self.points]
 
         # Randomly select for the rest and breed
-        while len(newpopulation) < self.size:
-            parent1 = weighted_choice(list(range(self.size)), weights)
-            parent2 = weighted_choice(list(range(self.size)), weights)
+        while len(newpopulation) < self.parameters.population_size:
+            parent1 = weighted_choice(list(range(self.parameters.population_size)), weights)
+            parent2 = weighted_choice(list(range(self.parameters.population_size)), weights)
 
             # Don't breed with yourself, dude!
             while parent1 == parent2:
-                parent1 = weighted_choice(list(range(self.size)), weights)
-                parent2 = weighted_choice(list(range(self.size)), weights)
+                parent1 = weighted_choice(list(range(self.parameters.population_size)), weights)
+                parent2 = weighted_choice(list(range(self.parameters.population_size)), weights)
 
             # Breed now
             child1, child2 = crossover(self.points[parent1], self.points[parent2])
 
             # Add the children
             newpopulation.append(child1)
-            if len(newpopulation) < self.size:
+            if len(newpopulation) < self.parameters.population_size:
                 newpopulation.append(child2)
 
         # Re-assign to the new population
@@ -231,7 +229,7 @@ class Population:
         # Evaluate fitnesses of new population points
         if self.multiprocessing:
             # Reuse pool of processes
-            fitnesses = self.pool.map(lambda coordinates, func: func(*coordinates), [point.coordinates for point in self.points], [self.objective_function] * self.size)
+            fitnesses = self.pool.map(lambda coordinates, func: func(*coordinates), [point.coordinates for point in self.points], [self.objective_function] * self.parameters.population_size)
 
             # Assign fitnesses to each point
             for index, point in enumerate(self.points):
@@ -247,7 +245,7 @@ class Population:
     def __mutate(self):
         for point in self.points:
             mutate_probability = uniform(0, 1)
-            if mutate_probability < self.mutation_probability:
+            if mutate_probability < self.parameters.mutation_probability:
                 point.mutate()
                 point.evaluate_fitness(self.objective_function)
 
